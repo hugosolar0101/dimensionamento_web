@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dimensionamento Solar</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #0f9b0f, #a8e063);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .app {
+      background: white;
+      width: 95%;
+      max-width: 400px;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      animation: fadeIn 0.5s ease;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #0f9b0f;
+    }
+
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 12px;
+      display: block;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      transition: 0.2s;
+    }
+
+    select:focus {
+      border-color: #0f9b0f;
+      outline: none;
+      box-shadow: 0 0 5px rgba(15,155,15,0.3);
+    }
+
+    .resultado {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      background: #e8f5e9;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #0f9b0f;
+      transition: 0.3s;
+    }
+
+    .resultado.loading {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+  <h2>☀️ Dimensionamento</h2>
+
+  <label>Marca do Inversor</label>
+  <select id="marcaInversor">
+    <option value="">Selecione</option>
+  </select>
+
+  <label>Modelo do Inversor</label>
+  <select id="modeloInversor">
+    <option value="">Selecione</option>
+  </select>
+
+  <label>Marca do Módulo</label>
+  <select id="marcaModulo">
+    <option value="">Selecione</option>
+  </select>
+
+  <label>Modelo do Módulo</label>
+  <select id="modeloModulo">
+    <option value="">Selecione</option>
+  </select>
+
+  <div class="resultado" id="resultado">
+    Selecione os dados
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+const SUPABASE_URL = 'https://sontushkmcpznmmfvqeu.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvbnR1c2hrbWNwem5tbWZ2cWV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MzA2OTMsImV4cCI6MjA5MDIwNjY5M30.ajXRnoKZ7EO4peLkiYY50FGeipY_Ots4lqH75mQno-o';
+
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const marcaInv = document.getElementById('marcaInversor');
+const modeloInv = document.getElementById('modeloInversor');
+const marcaMod = document.getElementById('marcaModulo');
+const modeloMod = document.getElementById('modeloModulo');
+const resultado = document.getElementById('resultado');
+
+let inversores = [];
+let modulos = [];
+
+// CARREGAR DADOS
+async function carregarDados() {
+  const { data: inv } = await client.from('inversores').select('*');
+  const { data: mod } = await client.from('modulos').select('*');
+
+  inversores = inv;
+  modulos = mod;
+
+  carregarMarcas();
+}
+
+// MARCAS
+function carregarMarcas() {
+  const marcasInv = [...new Set(inversores.map(i => i.marca))];
+  const marcasMod = [...new Set(modulos.map(m => m.marca))];
+
+  marcaInv.innerHTML = '<option value="">Selecione</option>';
+  marcaMod.innerHTML = '<option value="">Selecione</option>';
+
+  marcasInv.forEach(m => {
+    if (m) marcaInv.innerHTML += `<option value="${m}">${m}</option>`;
+  });
+
+  marcasMod.forEach(m => {
+    if (m) marcaMod.innerHTML += `<option value="${m}">${m}</option>`;
+  });
+}
+
+// EVENTOS
+marcaInv.onchange = () => {
+  modeloInv.innerHTML = '<option value="">Selecione</option>';
+
+  const modelos = inversores.filter(i => i.marca == marcaInv.value);
+
+  modelos.forEach(i => {
+    modeloInv.innerHTML += `<option value="${i.id}">${i.modelo}</option>`;
+  });
+
+  resultado.innerText = "Selecione os dados";
+};
+
+marcaMod.onchange = () => {
+  modeloMod.innerHTML = '<option value="">Selecione</option>';
+
+  const modelos = modulos.filter(m => m.marca == marcaMod.value);
+
+  modelos.forEach(m => {
+    modeloMod.innerHTML += `<option value="${m.id}">${m.modelo}</option>`;
+  });
+
+  resultado.innerText = "Selecione os dados";
+};
+
+// RESULTADO
+async function atualizarResultado() {
+  const inversor_id = modeloInv.value;
+  const modulo_id = modeloMod.value;
+
+  if (!inversor_id || !modulo_id) return;
+
+  resultado.classList.add("loading");
+  resultado.innerText = "Calculando...";
+
+  const { data } = await client
+    .from('dimensionamento')
+    .select('*')
+    .eq('inversor_id', inversor_id)
+    .eq('modulo_id', modulo_id);
+
+  if (data && data.length > 0) {
+    resultado.classList.remove("loading");
+    resultado.innerText = `Suporta até ${data[0].qtd_max} módulos`;
+  } else {
+    resultado.classList.remove("loading");
+    resultado.innerText = "Sem dados para essa combinação";
+  }
+}
+
+modeloInv.onchange = atualizarResultado;
+modeloMod.onchange = atualizarResultado;
+
+// REALTIME
+client
+  .channel('realtime')
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'dimensionamento' },
+    () => atualizarResultado()
+  )
+  .subscribe();
+
+// START
+carregarDados();
+</script>
+
+</body>
+</html>

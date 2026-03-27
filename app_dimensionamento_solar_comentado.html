@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Dimensionamento Solar</title>
+
+  <!-- Faz o layout funcionar bem em celular -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Conecta o app ao manifest (necessário para virar app instalável) -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Cor do tema do app (barra superior no celular) -->
+  <meta name="theme-color" content="#0f9b0f">
+
+  <!-- Biblioteca do Supabase (para conectar com o banco) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <style>
+    /* Estilo geral da página */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    /* Caixa principal do app */
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+
+    select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    /* Botão */
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #0f9b0f;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0c7a0c;
+    }
+
+    /* Resultado */
+    #resultado {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Dimensionamento</h1>
+
+  <!-- Seleção de marca do inversor -->
+  <label>Marca do Inversor</label>
+  <select id="marcaInversor"></select>
+
+  <!-- Seleção de modelo do inversor -->
+  <label>Modelo do Inversor</label>
+  <select id="modeloInversor"></select>
+
+  <!-- Seleção de marca do módulo -->
+  <label>Marca do Módulo</label>
+  <select id="marcaModulo"></select>
+
+  <!-- Seleção de modelo do módulo -->
+  <label>Modelo do Módulo</label>
+  <select id="modeloModulo"></select>
+
+  <!-- Botão para calcular -->
+  <button onclick="calcular()">Calcular</button>
+
+  <!-- Resultado -->
+  <div id="resultado">Selecione os dados</div>
+</div>
+
+<script>
+  // 🔗 URL do seu projeto no Supabase
+  const SUPABASE_URL = "SUA_URL_AQUI";
+
+  // 🔑 Chave pública (anon)
+  const SUPABASE_KEY = "SUA_CHAVE_AQUI";
+
+  // Criando conexão com o Supabase
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Arrays para armazenar dados
+  let inversores = [];
+  let modulos = [];
+  let dimensionamentos = [];
+
+  // Função inicial (carrega tudo)
+  async function carregarDados() {
+    
+    // Busca inversores
+    const { data: inv } = await supabase.from('inversores').select('*');
+
+    // Busca módulos
+    const { data: mod } = await supabase.from('modulos').select('*');
+
+    // Busca dimensionamentos
+    const { data: dim } = await supabase.from('dimensionamento').select('*');
+
+    inversores = inv;
+    modulos = mod;
+    dimensionamentos = dim;
+
+    // Preenche marcas
+    preencherMarcas();
+  }
+
+  // Preenche marcas sem repetir
+  function preencherMarcas() {
+    const marcasInv = [...new Set(inversores.map(i => i.marca))];
+    const marcasMod = [...new Set(modulos.map(m => m.marca))];
+
+    document.getElementById('marcaInversor').innerHTML = marcasInv.map(m => `<option>${m}</option>`);
+    document.getElementById('marcaModulo').innerHTML = marcasMod.map(m => `<option>${m}</option>`);
+  }
+
+  // Atualiza modelos baseado na marca escolhida
+  document.getElementById('marcaInversor').onchange = () => {
+    const marca = document.getElementById('marcaInversor').value;
+    const modelos = inversores.filter(i => i.marca === marca);
+
+    document.getElementById('modeloInversor').innerHTML = modelos.map(m => `<option value="${m.id}">${m.modelo}</option>`);
+  };
+
+  document.getElementById('marcaModulo').onchange = () => {
+    const marca = document.getElementById('marcaModulo').value;
+    const modelos = modulos.filter(m => m.marca === marca);
+
+    document.getElementById('modeloModulo').innerHTML = modelos.map(m => `<option value="${m.id}">${m.modelo}</option>`);
+  };
+
+  // Função de cálculo
+  function calcular() {
+    const inversor_id = document.getElementById('modeloInversor').value;
+    const modulo_id = document.getElementById('modeloModulo').value;
+
+    // Busca no banco a combinação
+    const resultado = dimensionamentos.find(d =>
+      d.inversor_id == inversor_id && d.modulo_id == modulo_id
+    );
+
+    if (resultado) {
+      document.getElementById('resultado').innerText = `Máx: ${resultado.qtd_max} módulos`;
+    } else {
+      document.getElementById('resultado').innerText = 'Combinação não encontrada';
+    }
+  }
+
+  // 🔄 Realtime (atualiza automaticamente)
+  supabase
+    .channel('realtime-dimensionamento')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'dimensionamento'
+    }, () => {
+      console.log('Atualização detectada!');
+      carregarDados();
+    })
+    .subscribe();
+
+  // Inicializa o app
+  carregarDados();
+
+</script>
+
+</body>
+</html>
