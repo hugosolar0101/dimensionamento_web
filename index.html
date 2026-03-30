@@ -89,6 +89,12 @@
 
 <body>
 
+  //Mostrar usuário logado
+<div style="position: absolute; top: 20px; right: 20px;">
+  <span id="user-info"></span>
+  <button onclick="logout()">Sair</button>
+</div>
+
 <div class="app">
   <h2>☀️ Dimensionamento</h2>
 
@@ -234,23 +240,27 @@ carregarDados();
 <script>
   netlifyIdentity.init();
 
-  // Protege a página
   netlifyIdentity.on("init", user => {
     if (!user) {
       window.location.href = "login.html";
+    } else {
+      // 👇 pega nome ou email
+      const nome = user.user_metadata?.full_name || user.email;
+
+      document.getElementById("user-info").innerText =
+        "Olá, " + nome;
     }
   });
 
-  // Logout funcionando
   function logout() {
     netlifyIdentity.logout();
   }
 
-  // Redireciona após logout
   netlifyIdentity.on("logout", () => {
     window.location.href = "login.html";
   });
 </script>
+
 <div style="position: absolute; top: 20px; right: 20px;">
   <button onclick="logout()">Sair</button>
 </div>
