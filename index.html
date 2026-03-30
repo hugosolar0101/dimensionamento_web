@@ -231,7 +231,7 @@ carregarDados();
 
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
-//Logout
+
 <script>
   <script>
   netlifyIdentity.on("init", user => {
@@ -240,10 +240,10 @@ carregarDados();
     }
   });
 
-  netlifyIdentity.init(); // 🔥 ESSENCIAL
+  netlifyIdentity.init();
   </script>
 
-  //logout opcional
+  // logout opcional
   <script>
   netlifyIdentity.on("logout", () => {
     window.location.href = "login.html";
