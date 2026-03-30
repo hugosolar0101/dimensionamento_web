@@ -237,6 +237,8 @@ carregarDados();
 
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
+<a href="admin.html">Painel Admin</a>
+
 <script>
   netlifyIdentity.init();
 
@@ -250,7 +252,7 @@ carregarDados();
         "Olá, " + nome;
 
       // 👇 ADMIN CHECK
-      const adminEmails = ["seuemail@gmail.com"];
+      const adminEmails = ["suporte@techlux.com.br"];
       const isAdmin = adminEmails.includes(user.email);
 
       if (isAdmin) {

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Admin</title>
+
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+    }
+
+    .sidebar {
+      width: 220px;
+      height: 100vh;
+      background: #1e293b;
+      color: white;
+      position: fixed;
+      padding: 20px;
+    }
+
+    .sidebar h2 {
+      margin-bottom: 30px;
+    }
+
+    .sidebar button {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      background: none;
+      border: none;
+      color: white;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .sidebar button:hover {
+      background: #334155;
+    }
+
+    .main {
+      margin-left: 240px;
+      padding: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    button.primary {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>Painel</h2>
+    <button onclick="showSection('dashboard')">Dashboard</button>
+    <button onclick="showSection('cadastro')">Cadastrar Dados</button>
+    <button onclick="showSection('lista')">Lista de Dados</button>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div id="user-info"></div>
+      <button onclick="logout()">Sair</button>
+    </div>
+
+    <div id="dashboard" class="card">
+      <h2>Dashboard</h2>
+      <p>Bem-vindo ao painel administrativo.</p>
+    </div>
+
+    <div id="cadastro" class="card hidden">
+      <h2>Cadastrar Dimensionamento</h2>
+      <input type="text" id="nome" placeholder="Nome">
+      <input type="number" id="valor" placeholder="Valor">
+      <button class="primary" onclick="salvar()">Salvar</button>
+    </div>
+
+    <div id="lista" class="card hidden">
+      <h2>Dados cadastrados</h2>
+      <ul id="lista-dados"></ul>
+    </div>
+
+  </div>
+
+  <script>
+    netlifyIdentity.init();
+
+    const adminEmails = ["seuemail@gmail.com"];
+
+    netlifyIdentity.on("init", user => {
+      if (!user) {
+        window.location.href = "login.html";
+      } else {
+        const nome = user.user_metadata?.full_name || user.email;
+        document.getElementById("user-info").innerText = "Olá, " + nome;
+
+        if (!adminEmails.includes(user.email)) {
+          alert("Acesso restrito ao administrador");
+          window.location.href = "index.html";
+        }
+      }
+    });
+
+    function logout() {
+      netlifyIdentity.logout();
+    }
+
+    netlifyIdentity.on("logout", () => {
+      window.location.href = "login.html";
+    });
+
+    function showSection(section) {
+      document.getElementById('dashboard').classList.add('hidden');
+      document.getElementById('cadastro').classList.add('hidden');
+      document.getElementById('lista').classList.add('hidden');
+
+      document.getElementById(section).classList.remove('hidden');
+    }
+
+    function salvar() {
+      const nome = document.getElementById("nome").value;
+      const valor = document.getElementById("valor").value;
+
+      const dados = JSON.parse(localStorage.getItem("dados") || "[]");
+      dados.push({ nome, valor });
+      localStorage.setItem("dados", JSON.stringify(dados));
+
+      alert("Salvo com sucesso!");
+      listar();
+    }
+
+    function listar() {
+      const lista = document.getElementById("lista-dados");
+      lista.innerHTML = "";
+
+      const dados = JSON.parse(localStorage.getItem("dados") || "[]");
+
+      dados.forEach(item => {
+        const li = document.createElement("li");
+        li.innerText = item.nome + " - " + item.valor;
+        lista.appendChild(li);
+      });
+    }
+
+    listar();
+  </script>
+
+</body>
+</html>
