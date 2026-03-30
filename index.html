@@ -3,6 +3,9 @@
 <head>
   <title>Dimensionamento Solar</title>
 
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f9b0f">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -225,6 +228,24 @@ client
 // START
 carregarDados();
 </script>
+
+<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
+<script>
+  netlifyIdentity.on("init", user => {
+    if (!user) {
+      window.location.href = "login.html"; // bloqueia acesso
+    }
+  });
+
+  // logout opcional
+  function logout() {
+    netlifyIdentity.logout();
+    window.location.href = "login.html";
+  }
+</script>
+
+<button onclick="logout()">Sair</button>
 
 </body>
 </html>
