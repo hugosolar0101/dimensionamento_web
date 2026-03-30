@@ -94,6 +94,11 @@
 <!-- Mostrar usuário logado --> 
 <div style="position: absolute; top: 20px; right: 20px;">
   <span id="user-info"></span>
+
+  <a href="admin.html">
+    <button>Painel Admin</button>
+  </a>
+
   <button onclick="logout()">Sair</button>
 </div>
 
@@ -252,7 +257,7 @@ carregarDados();
         "Olá, " + nome;
 
       // 👇 ADMIN CHECK
-      const adminEmails = ["suporte@techlux.com.br"];
+      const adminEmails = ["hugo.solar0101@gmail.com"];
       const isAdmin = adminEmails.includes(user.email);
 
       if (isAdmin) {
