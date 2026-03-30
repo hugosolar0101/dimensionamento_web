@@ -244,11 +244,18 @@ carregarDados();
     if (!user) {
       window.location.href = "login.html";
     } else {
-      // 👇 pega nome ou email
-      const nome = user.user_metadata?.full_name || user.email;
 
+      const nome = user.user_metadata?.full_name || user.email;
       document.getElementById("user-info").innerText =
         "Olá, " + nome;
+
+      // 👇 ADMIN CHECK
+      const adminEmails = ["seuemail@gmail.com"];
+      const isAdmin = adminEmails.includes(user.email);
+
+      if (isAdmin) {
+        document.getElementById("admin-area").style.display = "block";
+      }
     }
   });
 
